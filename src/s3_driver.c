@@ -34,7 +34,7 @@
  *
  *
  */
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/s3/s3_driver.c,v 1.20 2003/11/03 05:11:28 tsi Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/s3/s3_driver.c,v 1.19tsi Exp $ */
 
 
 #include "xf86.h"
@@ -171,6 +171,8 @@ static OptionInfoRec S3Options[] = {
 RamDacSupportedInfoRec S3IBMRamdacs[] = {
 	{ IBM524_RAMDAC },
 	{ IBM524A_RAMDAC },
+	{ IBM526_RAMDAC },
+	{ IBM526DB_RAMDAC },
 	{ -1 }
 };
 
@@ -256,7 +258,7 @@ static XF86ModuleVersionInfo S3VersRec = {
         MODULEVENDORSTRING,
         MODINFOSTRING1,
         MODINFOSTRING2,
-        XF86_VERSION_CURRENT,
+        XORG_VERSION_CURRENT,
         VERSION_MAJOR, VERSION_MINOR, PATCHLEVEL,
         ABI_CLASS_VIDEODRV,
         ABI_VIDEODRV_VERSION,
