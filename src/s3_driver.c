@@ -34,7 +34,7 @@
  *
  *
  */
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/s3/s3_driver.c,v 1.20 2003/11/03 05:11:28 tsi Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/s3/s3_driver.c,v 1.19tsi Exp $ */
 
 
 #include "xf86.h"
