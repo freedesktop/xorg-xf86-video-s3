@@ -546,6 +546,9 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 	}
 
 	pS3->FBAddress = pS3->PciInfo->memBase[0];
+	pScrn->memPhysBase = pS3->FBAddress;
+	pScrn->fbOffset = 0;
+	
 	if (pS3->S3NewMMIO)
 		pS3->IOAddress = pS3->FBAddress + S3_NEWMMIO_REGBASE;
 
