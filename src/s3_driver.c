@@ -236,7 +236,7 @@ static const char *ramdacSymbols[] = {
 	"RamDacGetHWIndex",
 	"IBMramdacProbe",
 	"IBMramdac526CalculateMNPCForClock",
-	"IBMramdac526SetBpp",
+	"IBMramdac526SetBppWeak",
 	NULL
 };
 
