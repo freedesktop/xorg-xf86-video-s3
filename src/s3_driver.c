@@ -34,7 +34,7 @@
  *
  *
  */
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/s3/s3_driver.c,v 1.19tsi Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/s3/s3_driver.c,v 1.18 2003/08/25 18:44:36 eich Exp $ */
 
 
 #include "xf86.h"
@@ -171,8 +171,6 @@ static OptionInfoRec S3Options[] = {
 RamDacSupportedInfoRec S3IBMRamdacs[] = {
 	{ IBM524_RAMDAC },
 	{ IBM524A_RAMDAC },
-	{ IBM526_RAMDAC },
-	{ IBM526DB_RAMDAC },
 	{ -1 }
 };
 
@@ -258,7 +256,7 @@ static XF86ModuleVersionInfo S3VersRec = {
         MODULEVENDORSTRING,
         MODINFOSTRING1,
         MODINFOSTRING2,
-        XORG_VERSION_CURRENT,
+        XF86_VERSION_CURRENT,
         VERSION_MAJOR, VERSION_MINOR, PATCHLEVEL,
         ABI_CLASS_VIDEODRV,
         ABI_VIDEODRV_VERSION,
@@ -546,16 +544,13 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 	}
 
 	pS3->FBAddress = pS3->PciInfo->memBase[0];
-	pScrn->memPhysBase = pS3->FBAddress;
-	pScrn->fbOffset = 0;
-	
 	if (pS3->S3NewMMIO)
 		pS3->IOAddress = pS3->FBAddress + S3_NEWMMIO_REGBASE;
 
-	xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Framebuffer @ 0x%lx\n",
+	xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Framebuffer @ 0x%x\n",
 		   pS3->FBAddress);
 	if (pS3->S3NewMMIO)
-		xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "MMIO @ 0x%lx\n",
+		xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "MMIO @ 0x%x\n",
 			   pS3->IOAddress);
 
 	pS3->PCIRetry = FALSE;		/* not supported yet */
@@ -958,9 +953,14 @@ static void S3Save(ScrnInfoPtr pScrn)
 	S3RegPtr save = &pS3->SavedRegs;
 	vgaHWPtr hwp = VGAHWPTR(pScrn);
         vgaRegPtr pVga = &hwp->SavedReg;
+	RamDacHWRecPtr pRAMDAC;
+	RamDacRegRecPtr RAMDACreg;
 	int vgaCRIndex = pS3->vgaCRIndex, vgaCRReg = pS3->vgaCRReg;
 	int i;
 	unsigned char cr5c = 0;
+
+	pRAMDAC = RAMDACHWPTR(pScrn);
+	RAMDACreg = &pRAMDAC->SavedReg;
 
 	S3BankZero(pScrn);
 

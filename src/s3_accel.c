@@ -24,7 +24,6 @@
  *
  *
  */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/s3/s3_accel.c,v 1.3 2003/11/23 18:07:31 twini Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/s3/s3_accel.c,v 1.2 2001/10/28 03:33:44 tsi Exp $ */
 
 
@@ -311,7 +310,7 @@ static void S3SubsequentSolidBresenhamLine(ScrnInfoPtr pScrn,
 	int error, e1, e2;
 
 	error = minor + err;
-	e1 = minor;   /* was: major, wrong (twini@xfree86.org) */
+	e1 = major;
 	e2 = minor - major;
 
 	if (major) {
