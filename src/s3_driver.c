@@ -171,6 +171,8 @@ static OptionInfoRec S3Options[] = {
 RamDacSupportedInfoRec S3IBMRamdacs[] = {
 	{ IBM524_RAMDAC },
 	{ IBM524A_RAMDAC },
+	{ IBM526_RAMDAC },
+	{ IBM526DB_RAMDAC },
 	{ -1 }
 };
 
