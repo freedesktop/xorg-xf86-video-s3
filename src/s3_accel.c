@@ -24,7 +24,7 @@
  *
  *
  */
-/* $XFree86$ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/s3/s3_accel.c,v 1.3 2003/11/23 18:07:31 twini Exp $ */
 
 
 #include "xf86.h"
