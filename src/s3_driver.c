@@ -699,7 +699,7 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 	clockRanges->minClock = 15600;
 	clockRanges->maxClock = pS3->MaxClock;
 	clockRanges->clockIndex = -1;
-	clockRanges->interlaceAllowed = FALSE;	/* not yet */
+	clockRanges->interlaceAllowed = TRUE;	/* not yet */
 	clockRanges->doubleScanAllowed = TRUE;	/* not yet */
 	
         i = xf86ValidateModes(pScrn, pScrn->monitor->Modes,
@@ -1076,6 +1076,7 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
         vgaRegPtr pVga = &hwp->ModeReg;
         int vgaCRIndex = pS3->vgaCRIndex, vgaCRReg = pS3->vgaCRReg;
 	int vgaIOBase = hwp->IOBase;
+	int interlacedived = mode->Flags & V_INTERLACE ? 1 : 0;
 	int r, n, m;
 	unsigned char tmp;
 
@@ -1107,6 +1108,15 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 			mode->CrtcHSyncEnd <<= -pS3->pixMuxShift;
 			mode->CrtcHSkew <<= -pS3->pixMuxShift;
 		}
+	}
+
+	/* This shouldn't be needed -- they should be set by vgaHWInit() */
+	if (!mode->CrtcVAdjusted) {
+		mode->CrtcVTotal >>= interlacedived;
+		mode->CrtcVDisplay >>= interlacedived;
+		mode->CrtcVSyncStart >>= interlacedived;
+		mode->CrtcVSyncEnd >>= interlacedived;
+		mode->CrtcVAdjusted = TRUE;
 	}
 
         if (!vgaHWInit(pScrn, mode))
@@ -1387,9 +1397,15 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		outb(vgaCRReg, new->cr62);
 	}
 
-	outb(vgaCRIndex, 0x42);
-	new->cr42 = inb(vgaCRReg) & ~0x20;
-	outb(vgaCRReg, new->cr42);
+	if (mode->Flags & V_INTERLACE) {
+		outb(vgaCRIndex, 0x42);
+		new->cr42 = inb(vgaCRReg) | 0x20;
+		outb(vgaCRReg, new->cr42);
+	} else {
+		outb(vgaCRIndex, 0x42);
+		new->cr42 = inb(vgaCRReg) & ~0x20;
+		outb(vgaCRReg, new->cr42);
+	}
 
 	if (pS3->Chipset == PCI_CHIP_968) {
 		unsigned char a;
