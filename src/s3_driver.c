@@ -662,7 +662,7 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 		pS3->DacSave = S3IBMRGB_Save;
 		pS3->DacRestore = S3IBMRGB_Restore;
 		pS3->CursorInit = S3IBMRGB_CursorInit;
-		pS3->RamDac->SetBpp = LoaderSymbol("IBMramdac526SetBpp");
+		pS3->RamDac->SetBpp = IBMramdac526SetBppWeak();
 		pS3->MaxClock = 170000;
 		pScrn->rgbBits = 8;
 		pS3->LoadPalette = S3GenericLoadPalette;
