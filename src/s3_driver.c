@@ -114,7 +114,7 @@ static void S3DisplayPowerManagementSet(ScrnInfoPtr pScrn,
 
 
 
-DriverRec S3 =
+_X_EXPORT DriverRec S3 =
 {
 	S3_VERSION,
 	DRIVER_NAME,
@@ -255,7 +255,7 @@ static XF86ModuleVersionInfo S3VersRec = {
 };
 
 
-XF86ModuleData s3ModuleData = { &S3VersRec, S3Setup, NULL };
+_X_EXPORT XF86ModuleData s3ModuleData = { &S3VersRec, S3Setup, NULL };
 
 pointer S3Setup (pointer module, pointer opts, int *errmaj, int *errmin)
 {
