@@ -62,6 +62,8 @@ sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 # Checks for header files.
 AC_HEADER_STDC
 
+AC_DEFINE(S3_NEWMMIO, 1, [Enable support for the new MMIO])
+
 AC_SUBST([XORG_CFLAGS])
 AC_SUBST([moduledir])
 
