@@ -30,6 +30,8 @@
 #include "config.h"
 #endif
 
+#define S3_NEWMMIO	/* previously defined in Imakefile in monolith */
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 
