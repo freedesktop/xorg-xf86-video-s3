@@ -327,7 +327,7 @@ void S3Trio64DAC_Init(ScrnInfoPtr pScrn, DisplayModePtr mode)
 			       135000, 270000);
 	else if (pS3->Chipset == PCI_CHIP_TRIO64V2_DXGX)
 		S3TrioSetClock(pScrn, mode->Clock, 2, 1, 1, 31, 0, 3, 2,
-			       170000, 270000);
+			       170000, 340000);
 	else
 		S3TrioSetClock(pScrn, mode->Clock, 2, 1, 1, 31, 0, 3, 2,
 			       135000, 270000);

@@ -1847,11 +1847,47 @@ void S3BankZero(ScrnInfoPtr pScrn)
 	outb(vgaCRReg, tmp);
 }
 
-
-
-static void S3DisplayPowerManagementSet(ScrnInfoPtr pScrn,
-					int PowerManagementMode, int flags)
+static void
+S3DisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
+			    int flags)
 {
-	vgaHWDPMSSet(pScrn, PowerManagementMode, flags);
-}
+     S3Ptr pS3 = S3PTR(pScrn);
+     switch (pS3->Chipset) {
+     case PCI_CHIP_TRIO64V2_DXGX:
+     case PCI_CHIP_TRIO:
+     case PCI_CHIP_AURORA64VP:
+     case PCI_CHIP_TRIO64UVP:
+     {
+	  int srd;
+      
+	  outb(0x3c4, 0x08);
+	  outb(0x3c5, 0x06);	  /* unlock extended sequence registers */
 
+	  outb(0x3c4, 0x0d);
+	  srd = inb(0x3c5) & 0xf;  /* clear the sync control bits */
+  
+	  switch (PowerManagementMode) {
+	  case DPMSModeOn:
+	       /* Screen: On; HSync: On, VSync: On */
+	       break;
+	  case DPMSModeStandby:
+	       /* Screen: Off; HSync: Off, VSync: On */
+	       srd |= 0x10;
+	       break;
+	  case DPMSModeSuspend:
+	       /* Screen: Off; HSync: On, VSync: Off */
+	       srd |= 0x40;
+	       break;
+	  case DPMSModeOff:
+	       /* Screen: Off; HSync: Off, VSync: Off */
+	       srd |= 0x50;
+	       break;
+	  }
+	  outb(0x3c4, 0x0d);
+	  outb(0x3c5, srd);
+	  break;
+     }
+     default:
+	  vgaHWDPMSSet(pScrn, PowerManagementMode, flags);
+     }
+}
