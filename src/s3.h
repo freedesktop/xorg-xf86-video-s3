@@ -30,6 +30,7 @@
 #ifndef _S3_H
 #define _S3_H
 
+#include "s3_pcirename.h"
 #include <string.h>
 
 #include "xf86.h"
@@ -86,7 +87,9 @@ typedef struct {
 
 typedef struct _S3Rec {
         pciVideoPtr             PciInfo;
+#ifndef XSERVER_LIBPCIACCESS
         PCITAG                  PciTag;
+#endif
         EntityInfoPtr           pEnt;
         unsigned long           IOAddress;
         unsigned long           FBAddress; 

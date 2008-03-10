@@ -499,7 +499,7 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
                 xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "ChipID override: 0x%04X\n",
                            pS3->Chipset);
         } else {
-                pS3->Chipset = pS3->PciInfo->chipType;   
+  	        pS3->Chipset = PCI_DEV_DEVICE_ID(pS3->PciInfo);
                 pScrn->chipset = (char *)xf86TokenToString(S3Chipsets,
                                                            pS3->Chipset);
         }                                                  
@@ -508,14 +508,16 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
                 xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "ChipRev override: %d\n",
                            pS3->ChipRev);
         } else
-                pS3->ChipRev = pS3->PciInfo->chipRev;    
+	        pS3->ChipRev = PCI_DEV_REVISION(pS3->PciInfo);
         
         xfree(pEnt);
         
         xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Chipset: \"%s\"\n", pScrn->chipset);
         
+#ifndef XSERVER_LIBPCIACCESS
         pS3->PciTag = pciTag(pS3->PciInfo->bus, pS3->PciInfo->device,
                              pS3->PciInfo->func);        
+#endif
 
 	switch (pS3->Chipset) {
 	case PCI_CHIP_964_0:
@@ -531,7 +533,7 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 		break;
 	}
 
-	pS3->FBAddress = pS3->PciInfo->memBase[0];
+	pS3->FBAddress = PCI_REGION_BASE(pS3->PciInfo, 0, REGION_MEM);
 	pScrn->memPhysBase = pS3->FBAddress;
 	pScrn->fbOffset = 0;
 	
@@ -1016,9 +1018,25 @@ static Bool S3MapMem(ScrnInfoPtr pScrn)
 	S3Ptr pS3 = S3PTR(pScrn);
 
 	if (pS3->S3NewMMIO) {
+
+
+#ifndef XSERVER_LIBPCIACCESS
 		pS3->MMIOBase = xf86MapPciMem(pScrn->scrnIndex, VIDMEM_MMIO,
 					      pS3->PciTag, pS3->IOAddress,
 					      S3_NEWMMIO_REGSIZE);
+#else
+		{
+			void** result = (void**)&pS3->MMIOBase;
+			int err = pci_device_map_range(pS3->PciInfo,
+						       pS3->IOAddress,
+						       S3_NEWMMIO_REGSIZE,
+						       PCI_DEV_MAP_FLAG_WRITABLE,
+						       result);
+			
+			if (err) 
+				return FALSE;
+		}
+#endif
 		if (!pS3->MMIOBase) {
 			xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 				   "Could not map MMIO\n");
@@ -1026,9 +1044,25 @@ static Bool S3MapMem(ScrnInfoPtr pScrn)
 		}
 	}
 
+#ifndef XSERVER_LIBPCIACCESS
 	pS3->FBBase = xf86MapPciMem(pScrn->scrnIndex, VIDMEM_FRAMEBUFFER,
 				    pS3->PciTag, pS3->FBAddress,
 				    pScrn->videoRam * 1024);
+
+#else
+	{
+		void** result = (void**)&pS3->FBBase;
+		int err = pci_device_map_range(pS3->PciInfo,
+					       pS3->FBAddress,
+					       pS3->videoRam * 1024,
+					       PCI_DEV_MAP_FLAG_WRITABLE |
+					       PCI_DEV_MAP_FLAG_WRITE_COMBINE,
+					       result);
+		
+		if (err) 
+			return FALSE;
+	}
+#endif
 	if (!pS3->FBBase) {
 		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 			   "Could not map framebuffer\n");
@@ -1045,11 +1079,21 @@ static void S3UnmapMem(ScrnInfoPtr pScrn)
 {
 	S3Ptr pS3 = S3PTR(pScrn);
 
-	if (pS3->S3NewMMIO)
+	if (pS3->S3NewMMIO) {
+#ifndef XSERVER_LIBPCIACCESS
 		xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pS3->MMIOBase,
 				S3_NEWMMIO_REGSIZE);
+#else
+		pci_device_unmap_range(pS3->PciInfo, pS3->MMIOBase, S3_NEWMMIO_REGSIZE);
+#endif
+	}
+	
+#ifndef XSERVER_LIBPCIACCESS
 	xf86UnMapVidMem(pScrn->scrnIndex, (pointer)pS3->FBBase,
 			pScrn->videoRam * 1024);
+#else
+	pci_device_unmap_range(pS3->PciInfo, pS3->FBBase, pScrn->videoRam * 1024);
+#endif
 
 	return;
 }
