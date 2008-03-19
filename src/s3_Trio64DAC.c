@@ -24,7 +24,6 @@
  *
  *
  */
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/s3/s3_Trio64DAC.c,v 1.7tsi Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
