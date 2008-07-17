@@ -1186,12 +1186,13 @@ static int S3GetPixMuxShift(ScrnInfoPtr pScrn)
 		shift = 1;	/* XXX IBMRGB */
 	else if (pS3->Chipset == PCI_CHIP_TRIO || 
 	         pS3->Chipset == PCI_CHIP_TRIO64UVP || 
-	         pS3->Chipset == PCI_CHIP_TRIO64V2_DXGX)
+	         pS3->Chipset == PCI_CHIP_TRIO64V2_DXGX) {
 		if (pS3->s3Bpp == 2)
 			shift = -1; 
 		else 
 			shift = 0;
-				
+	}
+
 	return shift;
 }
 
@@ -1220,7 +1221,7 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	   Set correct blanking for S3 Trio64V2. It's also needed
 	   to clear cr33_5.
 	*/
-	if (pS3->Chipset = PCI_CHIP_TRIO64V2_DXGX)
+	if (pS3->Chipset == PCI_CHIP_TRIO64V2_DXGX)
 		mode->CrtcHBlankStart = mode->CrtcHDisplay + 8;
 
 	if ((mode->HTotal == mode->CrtcHTotal) && (pS3->pixMuxShift != 0)) {
@@ -1903,7 +1904,7 @@ static void S3AdjustFrame(int scrnIndex, int x, int y, int flags)
 	{
 		int px, py, a;
 
-		miPointerPosition(&px, &py);
+		miPointerGetPosition(inputInfo.pointer, &px, &py);
 
 		if (pS3->s3Bpp == 1)
 			a = 4 - 1;
