@@ -1131,7 +1131,7 @@ static Bool S3MapMem(ScrnInfoPtr pScrn)
 		void** result = (void**)&pS3->FBBase;
 		int err = pci_device_map_range(pS3->PciInfo,
 					       pS3->FBAddress,
-					       pS3->videoRam * 1024,
+					       pScrn->videoRam * 1024,
 					       PCI_DEV_MAP_FLAG_WRITABLE |
 					       PCI_DEV_MAP_FLAG_WRITE_COMBINE,
 					       result);
