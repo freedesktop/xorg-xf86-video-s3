@@ -53,6 +53,7 @@
 #include "micmap.h"
 #include "mibstore.h"
 #include "fb.h"
+#include "inputstr.h"
 
 #include "IBM.h"
 #include "TI.h"
