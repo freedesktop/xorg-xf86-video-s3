@@ -54,7 +54,7 @@
 #include "mibstore.h"
 #include "fb.h"
 #include "inputstr.h"
-
+#include "shadowfb.h"
 #include "IBM.h"
 #include "TI.h"
 
@@ -157,7 +157,9 @@ typedef enum {
 	OPTION_SLOW_DRAM,
 	OPTION_SLOW_EDODRAM,
 	OPTION_SLOW_VRAM,
-	OPTION_XVIDEO
+	OPTION_XVIDEO,
+	OPTION_SHADOW_FB,
+	OPTION_ROTATE
 } S3Opts;
 
 static OptionInfoRec S3Options[] = {
@@ -168,6 +170,8 @@ static OptionInfoRec S3Options[] = {
 	{ OPTION_SLOW_EDODRAM, "slow_edodram", OPTV_BOOLEAN, {0}, FALSE },
 	{ OPTION_SLOW_VRAM, "slow_vram", OPTV_BOOLEAN, {0}, FALSE },
 	{ OPTION_XVIDEO, "XVideo", OPTV_BOOLEAN, {0}, FALSE },
+	{ OPTION_SHADOW_FB, "ShadowFB", OPTV_BOOLEAN, {0}, FALSE },
+	{ OPTION_ROTATE, "Rotate", OPTV_ANYSTR, {0}, FALSE },
 	{ -1, NULL, OPTV_NONE, {0}, FALSE }
 };
 
@@ -207,6 +211,12 @@ static const char *vbeSymbols[] = {
     	"vbeFree",
     	NULL
 };
+
+static const char *shadowSymbols[] = {
+	"ShadowFBInit",
+	NULL
+};
+
 
 static const char *int10Symbols[] = {
     	"xf86ExecX86int10",
@@ -269,6 +279,7 @@ pointer S3Setup (pointer module, pointer opts, int *errmaj, int *errmin)
                 xf86AddDriver(&S3, module, 0);
                 LoaderRefSymLists(vgaHWSymbols,
 				  vbeSymbols, int10Symbols, ramdacSymbols,
+				  shadowSymbols,
 				  fbSymbols,
 				  xaaSymbols,
 				  NULL);
@@ -372,6 +383,7 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 	Gamma gzeros = {0.0, 0.0, 0.0};
 	int i, vgaCRIndex, vgaCRReg;
 	unsigned char tmp;
+	char *s;
 
         if (flags & PROBE_DETECT)
                 return FALSE;
@@ -435,6 +447,48 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 	pS3->SlowDRAM = xf86ReturnOptValBool(S3Options, OPTION_SLOW_DRAM, FALSE);
 	pS3->SlowEDODRAM = xf86ReturnOptValBool(S3Options, OPTION_SLOW_EDODRAM, FALSE);
 	pS3->SlowVRAM = xf86ReturnOptValBool(S3Options, OPTION_SLOW_VRAM, FALSE);
+
+
+    
+	if (xf86GetOptValBool(S3Options, OPTION_SHADOW_FB, &pS3->shadowFB))
+		xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "ShadowFB %s.\n",
+			   pS3->shadowFB ? "enabled" : "disabled");
+    
+	pS3->rotate = 0;
+	if ((s = xf86GetOptValString(S3Options, OPTION_ROTATE))) {
+		if(!xf86NameCmp(s, "CW")) {
+			/* accel is disabled below for shadowFB */
+			pS3->shadowFB = TRUE;
+			pS3->rotate = 1;
+			xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, 
+				   "Rotating screen clockwise - acceleration disabled\n");
+		} else if(!xf86NameCmp(s, "CCW")) {
+			pS3->shadowFB = TRUE;
+			pS3->rotate = -1;
+			xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,  "Rotating screen"
+				   "counter clockwise - acceleration disabled\n");
+		} else {
+			xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "\"%s\" is not a valid"
+				   "value for Option \"Rotate\"\n", s);
+			xf86DrvMsg(pScrn->scrnIndex, X_INFO, 
+				   "Valid options are \"CW\" or \"CCW\"\n");
+		}
+	}
+	
+	if(pS3->shadowFB && !pS3->NoAccel) {
+		pS3->NoAccel = TRUE;
+		xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+			   "HW acceleration not supported with \"shadowFB\".\n");
+	}
+    
+	
+	if (pS3->rotate && pS3->HWCursor) {
+		xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+			   "HW cursor not supported with \"rotate\".\n");
+		pS3->HWCursor = FALSE;
+	}
+    
+        
         if (pScrn->numEntities > 1) {      
                 S3FreeRec(pScrn);
                 return FALSE;
@@ -457,6 +511,14 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 		pS3->pVBE = VBEInit(pS3->pInt10, pEnt->index);
 	}
 	
+	if (pS3->shadowFB) {
+		if (!xf86LoadSubModule(pScrn, "shadowfb")) {
+			S3FreeRec(pScrn);
+			return FALSE;
+		}
+		xf86LoaderReqSymLists(shadowSymbols, NULL);
+	}
+
 	if (!xf86SetGamma(pScrn, gzeros))
 		return FALSE;
 
@@ -722,7 +784,7 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
                 return FALSE;
         }
 
-        xf86SetCrtcForModes(pScrn, 0);
+        xf86SetCrtcForModes(pScrn, INTERLACE_HALVE_V);
         pScrn->currentMode = pScrn->modes;
         xf86PrintModes(pScrn);
         xf86SetDpi(pScrn, 0, 0);
@@ -744,6 +806,16 @@ static Bool S3ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
 	ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
 	S3Ptr pS3 = S3PTR(pScrn);
 	BoxRec ScreenArea;
+	int width, height, displayWidth;
+	
+	if (pS3->rotate) {
+		height = pScrn->virtualX;
+		width = pScrn->virtualY;
+	} else {
+		width = pScrn->virtualX;
+		height = pScrn->virtualY;
+	}
+
 
 	pScrn->fbOffset = 0;
 
@@ -778,7 +850,18 @@ static Bool S3ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
         
         miSetPixmapDepths ();
 
-        if (!fbScreenInit(pScreen, pS3->FBBase, pScrn->virtualX,
+        /* no screen rotation assumed */
+        if(pS3->shadowFB) {
+        	pS3->ShadowPitch = BitmapBytePad(pScrn->bitsPerPixel * width);
+        	pS3->ShadowPtr = xalloc(pS3->ShadowPitch * height);
+		displayWidth = pS3->ShadowPitch / (pScrn->bitsPerPixel >> 3);
+        } else {
+        	pS3->ShadowPtr = NULL;
+		displayWidth = pScrn->displayWidth;
+        }
+        
+        if (!fbScreenInit(pScreen, (pS3->shadowFB ? pS3->ShadowPtr : pS3->FBBase), 
+			  pScrn->virtualX,
                           pScrn->virtualY, pScrn->xDpi, pScrn->yDpi,
                           pScrn->displayWidth, pScrn->bitsPerPixel))
                 return FALSE;
@@ -824,7 +907,6 @@ static Bool S3ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
 			   ScreenArea.x1, ScreenArea.y1, 
 			   ScreenArea.x2, ScreenArea.y2);
 	
-
 	/* 2D acceleration setup */
 
 	if (pS3->NoAccel)
@@ -832,12 +914,12 @@ static Bool S3ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
 			   "Acceleration disabled (by option)\n");
 
 	/* It seems that acceleration isn't supported for 24-bit packed
-	   colour. Disable it for S3 Trio64V2 */
-	if (!pS3->NoAccel && (pScrn->bitsPerPixel == 24) &&
-	    (pS3->Chipset == PCI_CHIP_TRIO64V2_DXGX)) {
-		xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Acceleration isn't supported for 24 bpp. Disabled.\n");
+	   colour. So disable it. Using shadowFB is recommended in this mode. */
+	if (!pS3->NoAccel && (pScrn->bitsPerPixel == 24)) {
+		xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "HW acceleration isn't supported for 24 bpp. Disabled.\n");
 		pS3->NoAccel = TRUE;
 	}
+
 
 	if (!pS3->NoAccel) {
 		if (pS3->S3NewMMIO)
@@ -881,6 +963,28 @@ static Bool S3ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
 	} else
 		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Using SW cursor\n");
 
+
+	/* Shadow framebuffer setup */
+
+	if (pS3->shadowFB) {
+		RefreshAreaFuncPtr refreshArea = S3RefreshArea;
+		
+		if (pS3->rotate) {
+			if (!pS3->PointerMoved) {
+				pS3->PointerMoved = pScrn->PointerMoved;
+				pScrn->PointerMoved = S3PointerMoved;
+			}
+			
+			switch (pScrn->bitsPerPixel) {
+			case 8: refreshArea = S3RefreshArea8; break;
+			case 16: refreshArea = S3RefreshArea16; break;
+			case 24: refreshArea = S3RefreshArea24; break;
+			case 32: refreshArea = S3RefreshArea32; break;
+			}
+		}
+		
+		ShadowFBInit(pScreen, refreshArea);
+	}
 
 
 
@@ -1226,9 +1330,6 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 
 	if ((mode->HTotal == mode->CrtcHTotal) && (pS3->pixMuxShift != 0)) {
 		if (pS3->pixMuxShift > 0) {
-			/* XXX hack */
-/* 			mode->Flags |= V_PIXMUX; */
-
 			mode->CrtcHTotal >>= pS3->pixMuxShift;
 			mode->CrtcHDisplay >>= pS3->pixMuxShift;
 			mode->CrtcHBlankStart >>= pS3->pixMuxShift;
@@ -1237,8 +1338,6 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 			mode->CrtcHSyncEnd >>= pS3->pixMuxShift;
 			mode->CrtcHSkew >>= pS3->pixMuxShift;
 		} else if (pS3->pixMuxShift < 0) {
-/* 			mode->Flags |= V_PIXMUX; */
-
 			mode->CrtcHTotal <<= -pS3->pixMuxShift;
 			mode->CrtcHDisplay <<= -pS3->pixMuxShift;
 			mode->CrtcHBlankStart <<= -pS3->pixMuxShift;
@@ -1247,15 +1346,6 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 			mode->CrtcHSyncEnd <<= -pS3->pixMuxShift;
 			mode->CrtcHSkew <<= -pS3->pixMuxShift;
 		}
-	}
-
-	/* This shouldn't be needed -- they should be set by vgaHWInit() */
-	if (!mode->CrtcVAdjusted) {
-		mode->CrtcVTotal >>= interlacedived;
-		mode->CrtcVDisplay >>= interlacedived;
-		mode->CrtcVSyncStart >>= interlacedived;
-		mode->CrtcVSyncEnd >>= interlacedived;
-		mode->CrtcVAdjusted = TRUE;
 	}
 
         if (!vgaHWInit(pScrn, mode))
@@ -1932,71 +2022,6 @@ void S3Regdump(ScrnInfoPtr pScrn)
 {
         S3Ptr pS3 = S3PTR(pScrn);
         int vgaCRIndex = pS3->vgaCRIndex, vgaCRReg = pS3->vgaCRReg;
-
-#if 0
-	outb(vgaCRIndex, 0x31);
-	ErrorF("cr31 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x32);
-	ErrorF("cr32 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x33);
-	ErrorF("cr33 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x34);
-	ErrorF("cr34 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x3a);
-	ErrorF("cr3a = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x3b);
-	ErrorF("cr3b = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x3c);
-	ErrorF("cr3c = 0x%x\n", inb(vgaCRReg));
-
-	outb(vgaCRIndex, 0x40);
-	ErrorF("cr40 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x42);
-	ErrorF("cr42 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x43);
-	ErrorF("cr43 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x44);
-	ErrorF("cr44 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x45);
-	ErrorF("cr45 = 0x%x\n", inb(vgaCRReg));
-
-	outb(vgaCRIndex, 0x50);
-	ErrorF("cr50 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x51);
-	ErrorF("cr51 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x53);
-	ErrorF("cr53 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x54);
-	ErrorF("cr54 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x55);
-	ErrorF("cr55 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x58);
-	ErrorF("cr58 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x59);
-	ErrorF("cr59 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x5a);
-	ErrorF("cr5a = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x5d);
-	ErrorF("cr5d = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x5e);
-	ErrorF("cr5e = 0x%x\n", inb(vgaCRReg));
-	
-	outb(vgaCRIndex, 0x60);
-	ErrorF("cr60 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x61);
-	ErrorF("cr61 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x62);
-	ErrorF("cr62 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x65);
-	ErrorF("cr65 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x66);
-	ErrorF("cr66 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x67);
-	ErrorF("cr67 = 0x%x\n", inb(vgaCRReg));
-	outb(vgaCRIndex, 0x6d);
-	ErrorF("cr6d = 0x%x\n", inb(vgaCRReg));
-
-#else
 	{
 		int j;
 
@@ -2005,8 +2030,6 @@ void S3Regdump(ScrnInfoPtr pScrn)
 			ErrorF("CRTC 0x%x = 0x%x\n", j, inb(vgaCRReg));
 		}
 	}
-#endif
-
 #if 0
 	ErrorF("DAC regs\n");
 

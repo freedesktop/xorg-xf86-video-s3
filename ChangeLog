@@ -1,3 +1,18 @@
+2009-05-04  Evgeny M. Zubok <evgeny.zubok@tochka.ru>
+
+	* src/s3_driver.c:
+	* src/s3_shadow.c:
+
+	Add shadowFB option. It can be used to speedup drawing when
+	hardware acceleration is unwanted or unavailable (for colour depth
+	24 with 24 bpp framebuffer, for example). shadowFB is disabled by
+	default. Enabling shadowFB option disables HW acceleration. Thanks
+	to Egor Ivanov for initial porting of shadowFB from s3virge.
+
+	Interlace mode support.
+
+	Close bug #14999.
+	
 2008-07-06  Evgeny M. Zubok <evgeny.zubok@tochka.ru>
 
 	* src/s3_video.c: 
@@ -14,7 +29,7 @@
 	not implemented yet for all chipsets).
 
 	Close bug #5527: 24-bit colour depth support (24bpp and 
-	32bpp framebuffer) for TRIO64V2. Acceleration doesn't work
+	32bpp framebuffer) for TRIOs. Acceleration doesn't work
 	with packed colour mode (24 bpp FB) but works with 32bpp 
 	framebuffer mode (hardware limitation? -- need data).
 
