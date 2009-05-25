@@ -1,3 +1,19 @@
+2009-05-25  Evgeny M. Zubok <evgeny.zubok@tochka.ru>
+	
+	* src/s3_driver.c:
+	* src/s3_video.c:
+	
+	Enable Xv extension for Trio64V+ (thanks to Egor Ivanov for 
+	testing on real hardware) and Trio64UV+ (Tested only on Trio64V2 by
+	overriding Chipset with "Trio64UV+" but not on real hardware).
+
+	S3 Trio64V+ now using NewMMIO. Trio64V+ chips have the same ChipId
+	as Trio32/64 but only with chip revision greater or eq 0x40. So if 
+	you have problems with NewMMIO, you may override ChipRev in "Device" 
+ 	section of your xorg.conf: "ChipRev" 0x00. Note: disabling the NewMMIO 
+	also disables overlay video (Xv) because it isn't implemented for
+	Old MMIO yet.
+	
 2009-05-04  Evgeny M. Zubok <evgeny.zubok@tochka.ru>
 
 	* src/s3_driver.c:

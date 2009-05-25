@@ -534,8 +534,8 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
                 pS3->Chipset = pEnt->device->chipID;
                 pScrn->chipset = (char *)xf86TokenToString(S3Chipsets,
                                                            pS3->Chipset);
-                xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "ChipID override: 0x%04X\n",
-                           pS3->Chipset);
+                xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, 
+			   "ChipID override: 0x%04X\n", pS3->Chipset);
         } else {
   	        pS3->Chipset = PCI_DEV_DEVICE_ID(pS3->PciInfo);
                 pScrn->chipset = (char *)xf86TokenToString(S3Chipsets,
@@ -550,7 +550,8 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
         
         xfree(pEnt);
         
-        xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Chipset: \"%s\"\n", pScrn->chipset);
+        xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Chipset: \"%s\"\n", 
+		   pScrn->chipset);
         
 #ifndef XSERVER_LIBPCIACCESS
         pS3->PciTag = pciTag(pS3->PciInfo->bus, pS3->PciInfo->device,
@@ -561,6 +562,10 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 	case PCI_CHIP_964_0:
 	case PCI_CHIP_964_1:
 	case PCI_CHIP_TRIO:
+		if (pS3->ChipRev >= 0x40) { /* S3 Trio64V+ has the New MMIO */
+			pS3->S3NewMMIO = TRUE;
+			break;
+		}
 	case PCI_CHIP_AURORA64VP:		/* ??? */
 		pS3->S3NewMMIO = FALSE;
 		break;
@@ -571,7 +576,13 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 		break;
 	}
 
-	if (HAS_STREAMS_PROCESSOR() && pS3->S3NewMMIO)
+	/* TODO: Streams Processor and Xv for Old MMIO */
+
+	if (((pS3->Chipset == PCI_CHIP_AURORA64VP) ||
+	     (pS3->Chipset == PCI_CHIP_TRIO64UVP) ||
+	     (pS3->Chipset == PCI_CHIP_TRIO64V2_DXGX) ||
+	     ((pS3->Chipset == PCI_CHIP_TRIO) && (pS3->ChipRev >= 0x40)))
+	    && (pS3->S3NewMMIO))
         	pS3->hasStreams = TRUE;
         else
         	pS3->hasStreams = FALSE;
@@ -1308,7 +1319,6 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
         vgaRegPtr pVga = &hwp->ModeReg;
         int vgaCRIndex = pS3->vgaCRIndex, vgaCRReg = pS3->vgaCRReg;
 	int vgaIOBase = hwp->IOBase;
-	int interlacedived = mode->Flags & V_INTERLACE ? 1 : 0;
 	int r, n, m;
 	unsigned char tmp;
 
@@ -1551,7 +1561,7 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	new->cr60 = n;
 	outb(vgaCRReg, new->cr60);
 
-	if (pS3->Chipset == PCI_CHIP_TRIO64V2_DXGX) {
+	if (pS3->hasStreams) {
 		new->cr60 = 255;		
 		outb(vgaCRIndex, 0x60);
 		outb(vgaCRReg, new->cr60);		
@@ -1640,7 +1650,7 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		outb(vgaCRReg, new->cr42);
 	}
 
-	if (pS3->Chipset == PCI_CHIP_TRIO64V2_DXGX) {
+	if (pS3->hasStreams) {
 		unsigned char a;
 
 		outb(vgaCRIndex, 0x67);

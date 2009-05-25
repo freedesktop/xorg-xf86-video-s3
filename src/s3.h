@@ -258,9 +258,4 @@ void S3RefreshArea32(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
 			 	 (pS3->Chipset == PCI_CHIP_AURORA64VP) || \
 				 (pS3->Chipset == PCI_CHIP_TRIO64UVP) || \
 				 (pS3->Chipset == PCI_CHIP_TRIO64V2_DXGX))
-
-#define HAS_STREAMS_PROCESSOR() ((pS3->Chipset == PCI_CHIP_AURORA64VP) || \
-				 (pS3->Chipset == PCI_CHIP_TRIO64UVP) || \
-				 (pS3->Chipset == PCI_CHIP_TRIO64V2_DXGX))
-
 #endif /* _S3_H */
