@@ -183,71 +183,6 @@ RamDacSupportedInfoRec S3IBMRamdacs[] = {
 	{ -1 }
 };
 
-static const char *fbSymbols[] = {
-    "fbPictureInit",
-    "fbScreenInit",
-    NULL
-};
-
-static const char *vgaHWSymbols[] = {
-        "vgaHWGetHWRec",
-        "vgaHWFreeHWRec",
-        "vgaHWGetIOBase",
-        "vgaHWSave",
-        "vgaHWProtect",
-        "vgaHWRestore",
-        "vgaHWMapMem",
-        "vgaHWUnmapMem",
-        "vgaHWSaveScreen",
-        "vgaHWLock",
-	"vgaHWInit",
-	"vgaHWDPMSSet",
-        NULL
-};
-
-static const char *vbeSymbols[] = {
-    	"VBEInit",
-    	"vbeDoEDID",
-    	"vbeFree",
-    	NULL
-};
-
-static const char *shadowSymbols[] = {
-	"ShadowFBInit",
-	NULL
-};
-
-
-static const char *int10Symbols[] = {
-    	"xf86ExecX86int10",
-    	"xf86FreeInt10",
-    	"xf86InitInt10",
-    	"xf86Int10AllocPages",
-    	"xf86Int10FreePages",
-    	NULL
-};
-
-static const char *ramdacSymbols[] = {
-	"xf86InitCursor",
-	"xf86CreateCursorInfoRec",
-	"RamDacInit",
-	"RamDacCreateInfoRec",
-	"RamDacDestroyInfoRec",
-	"RamDacHelperCreateInfoRec",
-	"RamDacGetHWIndex",
-	"IBMramdacProbe",
-	"IBMramdac526CalculateMNPCForClock",
-	"IBMramdac526SetBppWeak",
-	NULL
-};
-
-static const char *xaaSymbols[] = {
-	"XAADestroyInfoRec",
-	"XAACreateInfoRec",
-	"XAAInit",
-	NULL
-};
-
 static int s3AccelLinePitches[] = { 640, 800, 1024, 1280, 1600 };
 
 #ifdef XFree86LOADER
@@ -277,12 +212,6 @@ pointer S3Setup (pointer module, pointer opts, int *errmaj, int *errmin)
         if (!setupDone) {  
                 setupDone = TRUE;
                 xf86AddDriver(&S3, module, 0);
-                LoaderRefSymLists(vgaHWSymbols,
-				  vbeSymbols, int10Symbols, ramdacSymbols,
-				  shadowSymbols,
-				  fbSymbols,
-				  xaaSymbols,
-				  NULL);
                 return (pointer) 1;
         } else {
                 if (errmaj)  
@@ -391,8 +320,6 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
         if (!xf86LoadSubModule(pScrn, "vgahw"))
                 return FALSE;
         
-        xf86LoaderReqSymLists(vgaHWSymbols, NULL);  
- 
         if (!vgaHWGetHWRec(pScrn))
                 return FALSE;
         
@@ -502,12 +429,10 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
         }
 
 	if (xf86LoadSubModule(pScrn, "int10")) {
-		xf86LoaderReqSymLists(int10Symbols, NULL);
 		pS3->pInt10 = xf86InitInt10(pEnt->index);
 	}
 
 	if (xf86LoadSubModule(pScrn, "vbe")) {
-		xf86LoaderReqSymLists(vbeSymbols, NULL);
 		pS3->pVBE = VBEInit(pS3->pInt10, pEnt->index);
 	}
 	
@@ -516,7 +441,6 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 			S3FreeRec(pScrn);
 			return FALSE;
 		}
-		xf86LoaderReqSymLists(shadowSymbols, NULL);
 	}
 
 	if (!xf86SetGamma(pScrn, gzeros))
@@ -678,7 +602,6 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 
 	if (!xf86LoadSubModule(pScrn, "ramdac"))
 		return FALSE;
-	xf86LoaderReqSymLists(ramdacSymbols, NULL);
 
 	pScrn->rgbBits = 8;	/* set default */
 
@@ -801,11 +724,9 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
         xf86SetDpi(pScrn, 0, 0);
  
         xf86LoadSubModule(pScrn, "fb");
-        xf86LoaderReqSymLists(fbSymbols, NULL);
 
 	if (!xf86LoadSubModule(pScrn, "xaa"))
 		return FALSE;
-	xf86LoaderReqSymLists(xaaSymbols, NULL);
 
 	return TRUE;
 }
