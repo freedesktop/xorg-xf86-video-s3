@@ -51,7 +51,7 @@ driver supports PCI video cards based on the following S3 chips:
 .PP
 Also driver supports the following RAMDACs:
 .TP 12
-.B IBM 524A 
+.B IBM 524, IBM 524A, IBM 526, IBM 526DB
 .TP 12
 .B TI ViewPoint 3025 
 
@@ -163,9 +163,9 @@ lower either the resolution or framebuffer's depth or both before the
 viewing, otherwise, you will get the allocation error and will not see
 the video. For example, with 24 bpp framebuffer and the same
 resolution 800x600 the offscreen area will be about 640 kB - it's
-enough for the 640x480 frame. 800x600 with the 16bpp framebuffer gives
-about 1110 kB of offscreen area - this allows to upscale up to 768x576
-movies. Note, that all movie resolutions in examples above are
+enough for the 640x480 frame. 800x600 with the 16 bpp framebuffer
+gives about 1110 kB of offscreen area - this allows to upscale up to
+768x576 movies. Note, that all movie resolutions in examples above are
 provided as a reference; the movies can have the different aspect
 ratios and non-standard dimensions. A total pixel amount is the main
 consideration not the certain width and height.
@@ -212,12 +212,12 @@ cycle).
 .BI "Option \*qslow_edodram\*q \*q" boolean \*q
 Switch to 2-cycle EDO mode. Try this if you encounter pixel
 corruption. Using this option will cause a decrease in
-performance. Default: off (1-cycle EDO mode).
+performance. Default: off (BIOS defaults).
 .TP
 .BI "Option \*qslow_dram\*q \*q" boolean \*q
 For Trio and Aurora64V+ chips: increase -RAS Precharge Timing to 3.5
-MCLK. Try this option if you encounter pixel errors. Default: off (2.5
-MCLK).
+MCLK. Try this option if you encounter pixel errors. Default: off
+(BIOS defaults).
 .TP
 .BI "Option \*qslow_vram\*q \*q" boolean \*q
 For Vision964, Vision968 chips: increase -RAS Low Timing to 4.5

@@ -1659,35 +1659,14 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		new->cr66 |= 0x80;
 	outb(vgaCRReg, new->cr66);
 
+
 	if (pS3->SlowDRAMRefresh)
 		new->cr3a = 0xb7;
-	else
+       	else
 		new->cr3a = 0xb5;
 	outb(vgaCRIndex, 0x3a);
 	outb(vgaCRReg, new->cr3a);
 
-	/* 
-	   Set 3.5 MCLKs for -RAS low, 2.5 MCLKs for -RAS precharge, 
-	   disable -CAS/-OE adjustment. It seems that cr68 has different 
-	   format for 96x and TRIOs
-	*/
-	if (!((pS3->Chipset == PCI_CHIP_968) || 
-	      (pS3->Chipset == PCI_CHIP_964_0) ||
-	      (pS3->Chipset == PCI_CHIP_964_1))) {
-
-		outb(vgaCRIndex, 0x39);
-		outb(vgaCRReg, 0xa5);
-
-		outb(vgaCRIndex, 0x68);
-		tmp = inb(vgaCRReg) & ~0x0f;
-		outb(vgaCRReg, tmp | 0x0f);
-
-		/* Enable 1-cycle EDO access */
-		outb(vgaCRIndex, 0x36);
-		tmp = inb(vgaCRReg);
-		outb(vgaCRReg, tmp & 0xf3);
-	}
-	
 	if (pS3->SlowVRAM) {
 		/*
 		 * some Diamond Stealth 64 VRAM cards have a problem with
