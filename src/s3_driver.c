@@ -277,7 +277,9 @@ static Bool S3Probe(DriverPtr drv, int flags)
 	if (flags & PROBE_DETECT)
 		foundScreen = TRUE;
 	else for (i=0; i<numUsed; i++) {
-		ScrnInfoPtr pScrn = xf86AllocateScreen(drv, 0);
+		ScrnInfoPtr pScrn = NULL;
+                pScrn = xf86ConfigPciEntity(pScrn, 0, usedChips[i], S3PciChipsets,
+                                          NULL, NULL, NULL, NULL, NULL);
 
 		pScrn->driverVersion = VERSION_MAJOR;
 		pScrn->driverName = DRIVER_NAME;
@@ -292,9 +294,6 @@ static Bool S3Probe(DriverPtr drv, int flags)
 		pScrn->FreeScreen = S3FreeScreen;
 
 		foundScreen = TRUE;
-
-                xf86ConfigActivePciEntity(pScrn, usedChips[i], S3PciChipsets,
-                                          NULL, NULL, NULL, NULL, NULL);
         }
                 
         xfree(usedChips);
