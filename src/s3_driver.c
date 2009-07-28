@@ -45,7 +45,7 @@
 #include "xf86PciInfo.h"
 #include "xf86fbman.h"
 #include "xf86cmap.h"
-#ifndef XSERVER_LIBPCIACCESS
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
 #include "xf86Resources.h"
 #include "xf86RAC.h"
 #endif
