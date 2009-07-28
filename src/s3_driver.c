@@ -43,10 +43,12 @@
 #include "xf86_OSproc.h"
 #include "xf86Pci.h"
 #include "xf86PciInfo.h"
-#include "xf86Resources.h"
 #include "xf86fbman.h"
 #include "xf86cmap.h"
+#ifndef XSERVER_LIBPCIACCESS
+#include "xf86Resources.h"
 #include "xf86RAC.h"
+#endif
 #include "compiler.h"
 #include "xaa.h"
 #include "mipointer.h"
@@ -421,11 +423,13 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
         }
                 
         pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
+#ifndef XSERVER_LIBPCIACCESS
         if (pEnt->resources) {
                 xfree(pEnt);
                 S3FreeRec(pScrn);
                 return FALSE;
         }
+#endif
 
 	if (xf86LoadSubModule(pScrn, "int10")) {
 		pS3->pInt10 = xf86InitInt10(pEnt->index);
@@ -446,10 +450,10 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 		return FALSE;
 
         pS3->PciInfo = xf86GetPciInfoForEntity(pEnt->index);
-        xf86RegisterResources(pEnt->index, NULL, ResNone);
+#ifndef XSERVER_LIBPCIACCESS
 	/* don't disable PIO funcs */
         xf86SetOperatingState(resVgaMemShared, pEnt->index, ResDisableOpr);
-
+#endif
         if (pEnt->device->chipset && *pEnt->device->chipset) {
                 pScrn->chipset = pEnt->device->chipset;
                 pS3->Chipset = xf86StringToToken(S3Chipsets, pScrn->chipset);
@@ -935,9 +939,11 @@ static Bool S3ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
 
 	xf86DPMSInit(pScreen, S3DisplayPowerManagementSet, 0);
 
+#ifndef XSERVER_LIBPCIACCESS
 	/* XXX Check if I/O and Mem flags need to be the same. */
 	pScrn->racIoFlags = pScrn->racMemFlags = RAC_COLORMAP
 	    | RAC_FB | RAC_VIEWPORT | RAC_CURSOR;
+#endif
 
 	if (pS3->SlowEDODRAM)
 		xf86DrvMsg(pScrn->scrnIndex, X_INFO, 
