@@ -309,6 +309,7 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 	S3Ptr pS3;
 	vgaHWPtr hwp;
 	ClockRangePtr clockRanges;
+	vbeInfoPtr pVBE;
 	rgb zeros = {0, 0, 0};
 	Gamma gzeros = {0.0, 0.0, 0.0};
 	int i, vgaCRIndex, vgaCRReg;
@@ -436,7 +437,8 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 	}
 
 	if (xf86LoadSubModule(pScrn, "vbe")) {
-		pS3->pVBE = VBEInit(pS3->pInt10, pEnt->index);
+		pVBE = VBEInit(pS3->pInt10, pEnt->index);
+		vbeFree(pVBE);
 	}
 	
 	if (pS3->shadowFB) {
