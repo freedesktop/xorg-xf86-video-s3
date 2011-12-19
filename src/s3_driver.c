@@ -441,6 +441,15 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 		vbeFree(pVBE);
 	}
 	
+	xf86LoadSubModule(pScrn, "fb");
+
+	if (!xf86LoadSubModule(pScrn, "xaa")) {
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+			   "Falling back to shadowfb\n");
+		pS3->NoAccel = TRUE;
+		pS3->shadowFB = TRUE;
+	}
+
 	if (pS3->shadowFB) {
 		if (!xf86LoadSubModule(pScrn, "shadowfb")) {
 			S3FreeRec(pScrn);
@@ -728,11 +737,6 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
         xf86PrintModes(pScrn);
         xf86SetDpi(pScrn, 0, 0);
  
-        xf86LoadSubModule(pScrn, "fb");
-
-	if (!xf86LoadSubModule(pScrn, "xaa"))
-		return FALSE;
-
 	return TRUE;
 }
 
