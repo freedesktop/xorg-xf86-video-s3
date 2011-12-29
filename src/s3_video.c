@@ -244,6 +244,8 @@ static XF86VideoAdaptorPtr S3SetupImageVideoOverlay(ScreenPtr pScreen)
 	XF86VideoAdaptorPtr adapt;
 
 	adapt = S3AllocAdaptor(pScrn);
+	if (adapt == NULL)
+		return NULL;
 
     	adapt->type = XvWindowMask | XvInputMask | XvImageMask;
     	adapt->flags = VIDEO_OVERLAID_IMAGES | VIDEO_CLIP_TO_VIEWPORT;
