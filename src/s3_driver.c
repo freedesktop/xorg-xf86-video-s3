@@ -50,7 +50,6 @@
 #include "xf86RAC.h"
 #endif
 #include "compiler.h"
-#include "xaa.h"
 #include "mipointer.h"
 #include "micmap.h"
 #include "mibstore.h"

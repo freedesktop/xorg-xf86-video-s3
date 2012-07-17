@@ -36,7 +36,10 @@
 #include "xf86Pci.h"
 #include "xf86PciInfo.h"
 #include "xf86RamDac.h"
+#ifdef HAVE_XAA_H
 #include "xaa.h"
+#endif
+#include "xf86fbman.h"
 #include "vbe.h"
 #include "vgaHW.h"
 
@@ -110,7 +113,9 @@ typedef struct _S3Rec {
 	Bool			PCIRetry;
 	Bool			ColorExpandBug;
 
+#ifdef HAVE_XAA_H
         XAAInfoRecPtr           pXAA;
+#endif
 	xf86CursorInfoPtr	pCurs;
 	xf86Int10InfoPtr	pInt10;
         XF86VideoAdaptorPtr     adaptor;
