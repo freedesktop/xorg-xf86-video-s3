@@ -176,7 +176,7 @@ SECOND_PASS:
 
 Bool S3DGAInit(ScreenPtr pScreen)
 {
-	ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+	ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
 	S3Ptr pS3 = S3PTR(pScrn);
 	DGAModePtr modes = NULL;
 	int num = 0;

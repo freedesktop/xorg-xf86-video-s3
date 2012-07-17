@@ -549,7 +549,7 @@ Bool S3AccelInitPIO(ScreenPtr pScreen)
 #endif
 {
 #ifdef HAVE_XAA_H
-	ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+	ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
 	S3Ptr pS3 = S3PTR(pScrn);
 	XAAInfoRecPtr pXAA;
 
