@@ -251,7 +251,7 @@ static Bool S3_SetMode(ScrnInfoPtr pScrn, DGAModePtr pMode)
 						 pMode->bitsPerPixel :
 						 pMode->depth);
 
-		S3SwitchMode(indx, pMode->mode, 0);
+		S3SwitchMode(SWITCH_MODE_ARGS(pScrn, pMode->mode));
 	}
 
 	return TRUE;
@@ -270,7 +270,7 @@ static void S3_SetViewport(ScrnInfoPtr pScrn, int x, int y, int flags)
 {
 	S3Ptr pS3 = S3PTR(pScrn);
 
-	pScrn->AdjustFrame(pScrn->pScreen->myNum, x, y, flags);
+	pScrn->AdjustFrame(ADJUST_FRAME_ARGS(pScrn, x, y));
 	pS3->DGAViewportStatus = 0;
 }
 
