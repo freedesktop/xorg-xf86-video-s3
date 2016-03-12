@@ -46,7 +46,7 @@ static unsigned char *find_bios_string(ScrnInfoPtr pScrn, int BIOSbase,
 	S3Ptr pS3 = S3PTR(pScrn);
 
 	bios = malloc(BIOS_BSIZE);
-	if (bios = NULL)
+	if (bios == NULL)
 		return NULL;
 
 	if (!init) {
