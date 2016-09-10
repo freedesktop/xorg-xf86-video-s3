@@ -249,9 +249,6 @@ void S3RefreshArea32(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
 #define	TI3025_RAMDAC	0x3025
 #define	TI3020_RAMDAC	0x3020
 
-#define BIOS_BSIZE	1024
-#define	BIOS_BASE	0xc0000
-
 /*
  * Chip...Sets...
  */
